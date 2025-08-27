@@ -80,7 +80,7 @@ server.tool(
       });
 
       // Prepare content for generation
-      let contentParts = [{ text: prompt }];
+      let contentParts = [];
       
       // If image URL is provided, fetch and include it in the request
       if (imageUrl) {
@@ -92,6 +92,10 @@ server.tool(
               mimeType: imageData.mimeType
             }
           });
+          // Add prompt that explicitly references the provided image
+          contentParts.push({ 
+            text: `Based on the provided image, ${prompt}` 
+          });
           // Fetched image from URL
         } catch (fetchError) {
           // Failed to fetch image from URL
@@ -102,6 +106,9 @@ server.tool(
             }]
           };
         }
+      } else {
+        // No image URL provided, just use the prompt for new image generation
+        contentParts.push({ text: prompt });
       }
 
       // Generate the image
@@ -182,12 +189,12 @@ server.tool(
     }
   },
   {
-    description: "Generate or modify images using Gemini API. Can create new images from text prompts or modify existing images by providing an image URL. When a web URL is returned in the response, use markdown syntax ![alt text](url) to display the image inline.",
+    description: "Generate or modify images using Gemini API. Can create new images from text prompts or modify existing images by providing an image URL. When imageUrl is provided, the model will analyze the reference image and apply the prompt as modifications or variations. When a web URL is returned in the response, use markdown syntax ![alt text](url) to display the image inline.",
     parameters: {
-      prompt: { type: "string", description: "The text description of the image to generate or modifications to apply to the input image" },
+      prompt: { type: "string", description: "The text description of the image to generate. If imageUrl is provided, this describes the modifications or variations to apply to the reference image." },
       aspectRatio: { type: "string", description: "Aspect ratio of the image (e.g., '1:1', '16:9')", optional: true },
       outputFormat: { type: "string", description: "Output image format ('png' or 'jpeg')", optional: true },
-      imageUrl: { type: "string", description: "Optional URL of an existing image to modify or use as reference. When provided, the prompt will be applied as modifications to this image.", optional: true },
+      imageUrl: { type: "string", description: "Optional URL of an existing image to use as reference. The model will analyze this image and apply the prompt as modifications. This enables image-to-image transformations, style transfers, and variations based on the reference.", optional: true },
       model: { type: "string", description: "Gemini model to use for generation. Defaults to GEMINI_MODEL environment variable. Common options: 'gemini-2.0-flash-exp-image-generation', 'gemini-2.5-flash-image-preview', 'gemini-1.5-pro', 'gemini-1.5-flash'", optional: true }
     }
   }
