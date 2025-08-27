@@ -114,9 +114,8 @@ server.tool(
       // Generate the image
       const result = await model.generateContent(contentParts);
 
-      // Extract the generated image data (base64 encoded)
+      // Extract the generated image data and save to file
       const responseContent = [];
-      const MAX_RESPONSE_SIZE = 1048576; // 1MB limit
       
       for (const part of result.response.candidates[0].content.parts) {
         if (part.text) {
@@ -134,43 +133,19 @@ server.tool(
           const filepath = path.join(OUTPUT_DIR, filename);
           
           fs.writeFileSync(filepath, buffer);
-          // Image saved to file
           
-          // Calculate response size with image data
-          const imageResponse = {
-            type: "image",
-            data: imageData,
-            mimeType: `image/${outputFormat}`
-          };
-          
-          const currentResponseSize = JSON.stringify({ content: [...responseContent, imageResponse] }).length;
-          
-          // If adding the image would exceed the limit, return URL instead
-          if (currentResponseSize > MAX_RESPONSE_SIZE) {
-            if (WEB_BASE_URL) {
-              const webUrl = `${WEB_BASE_URL.replace(/\/$/, '')}/${filename}`;
-              responseContent.push({
-                type: "text",
-                text: `Image saved. Use markdown to display: ![Generated Image](${webUrl})\n\nDirect URL: ${webUrl}`
-              });
-            } else {
-              responseContent.push({
-                type: "text", 
-                text: `Image saved as ${filepath} (too large to display inline)`
-              });
-            }
+          // Always return URL instead of inline image
+          if (WEB_BASE_URL) {
+            const webUrl = `${WEB_BASE_URL.replace(/\/$/, '')}/${filename}`;
+            responseContent.push({
+              type: "text",
+              text: `Image generated successfully. Use markdown to display: ![Generated Image](${webUrl})\n\nDirect URL: ${webUrl}`
+            });
           } else {
-            // Response size is okay, include the image data
-            responseContent.push(imageResponse);
-            
-            // Still add web URL if configured
-            if (WEB_BASE_URL) {
-              const webUrl = `${WEB_BASE_URL.replace(/\/$/, '')}/${filename}`;
-              responseContent.push({
-                type: "text",
-                text: `Image also available at: ${webUrl}`
-              });
-            }
+            responseContent.push({
+              type: "text", 
+              text: `Image saved as ${filepath}`
+            });
           }
         }
       }
