@@ -27,7 +27,10 @@ This is a Model Context Protocol (MCP) server that provides image generation cap
            "command": "npx",
            "args": ["-y", "github:sanxfxteam/gemini-mcp-server"],
            "env": {
-             "GEMINI_API_KEY": "your_api_key_here"
+             "GEMINI_API_KEY": "your_api_key_here",
+             "GEMINI_MODEL": "gemini-2.0-flash-exp-image-generation",
+             "OUTPUT_DIR": "./generated-images",
+             "WEB_BASE_URL": "https://your-domain.com/images"
            }
          }
        }
@@ -44,10 +47,21 @@ npm install
 ```
 
 2. Set up your environment variables:
-Create a `.env` file in the root directory and add your Google API key:
+Create a `.env` file in the root directory:
 ```
 GEMINI_API_KEY=your_api_key_here
+GEMINI_MODEL=gemini-2.0-flash-exp-image-generation
+OUTPUT_DIR=./generated-images
+WEB_BASE_URL=https://your-domain.com/images
 ```
+
+**Environment Variables:**
+- `GEMINI_API_KEY` (required): Your Google Gemini API key
+- `GEMINI_MODEL` (optional): Gemini model to use for image generation
+  - Default: `gemini-2.0-flash-exp-image-generation`
+  - Options: `gemini-2.0-flash-exp-image-generation`, `gemini-2.5-flash-image-preview`, `gemini-1.5-pro`, `gemini-1.5-flash`
+- `OUTPUT_DIR` (optional): Directory to save generated images (default: `./generated-images`)
+- `WEB_BASE_URL` (optional): Base URL for serving images publicly. When set, responses include web URLs for generated images
 
 ## Usage
 
@@ -65,22 +79,34 @@ npx @modelcontextprotocol/inspector npm run start
 
 #### generateImage
 
-Generates images using Gemini 2's experimental image generation API.
+Generates or modifies images using Gemini API. Can create new images from text prompts or modify existing images.
 
 Parameters:
-- `prompt` (string, required): The description of the image you want to generate
-- `numSamples` (number, optional, default: 4): Number of images to generate
-- `aspectRatio` (string, optional, default: '1:1'): Aspect ratio of the generated images
-- `personGeneration` (string, optional, default: 'ALLOW_ADULT'): Person generation settings
+- `prompt` (string, required): Text description of image to generate or modifications to apply to input image
+- `aspectRatio` (string, optional, default: '1:1'): Aspect ratio of the generated images  
+- `outputFormat` (string, optional, default: 'png'): Output image format ('png' or 'jpeg')
+- `imageUrl` (string, optional): URL of existing image to modify or use as reference
+- `model` (string, optional): Gemini model to use, defaults to `GEMINI_MODEL` environment variable
 
-Example MCP request:
+Example MCP requests:
 ```json
+// Generate new image
 {
   "tool": "generateImage",
   "params": {
     "prompt": "A serene mountain landscape at sunset",
-    "numSamples": 2,
-    "aspectRatio": "16:9"
+    "aspectRatio": "16:9",
+    "outputFormat": "png"
+  }
+}
+
+// Modify existing image
+{
+  "tool": "generateImage", 
+  "params": {
+    "prompt": "Add snow to the mountains",
+    "imageUrl": "https://example.com/mountain.jpg",
+    "model": "gemini-2.5-flash-image-preview"
   }
 }
 ```
